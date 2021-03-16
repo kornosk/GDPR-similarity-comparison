@@ -35,41 +35,69 @@ def main():
 
 	chapters = ["undefined"]
 	articles = ["undefined"]
+	sections = ["undefined"]
 
-	df = pd.DataFrame(columns=["chapter", "article", "recital"])
+	df = pd.DataFrame(columns=["chapter", "section", "article", "recital"])
 
 	processing_chapter = False
+	processing_section = False
 	processing_article = False
 	# processing_recital = False
 
 	tmp_str = ""
 	for idx in range(len(lines)):
-		line = lines[idx]
+		line = lines[idx].strip()
 
 		if line.startswith("CHAPTER "):
 			# chapters.append(line.strip())
 			processing_chapter = True
+			processing_section = False
 			processing_article = False
-			# processing_recital = False
-		elif line.startswith("Article "):
-			# articles.append(line.strip())
+			tmp_str = line
+			
+			# start new articles and sections
+			articles = ["undefined"]
+			sections = ["undefined"]
+
+		elif line.startswith("Section "):
 			processing_chapter = False
+			processing_section = True
+			processing_article = False
+			tmp_str = line
+		
+		elif line.startswith("Article "):
+			processing_chapter = False
+			processing_section = False
 			processing_article = True
-			# processing_recital = False
+
 		elif len(line):
 			if processing_chapter:
 				# print("yeah")
 				tmp_str = tmp_str.strip() + " " + line.strip()
+			elif processing_section:
+				tmp_str = tmp_str.strip() + " " + line.strip()
+				# sections.append(line.strip())
 			elif processing_article:
+				processing_chapter = False
+				processing_section = False
 				processing_article = False
 				articles.append(line.strip())
 			else:
-				row = [chapters[-1], articles[-1], line.strip()]
+				row = [chapters[-1], sections[-1], articles[-1], line.strip()]
 				df.loc[len(df.index)] = row
 		else: # len(line) <= 0
 			if processing_chapter:
 				processing_chapter = False
+				processing_section = False
+				processing_article = False
 				chapters.append(tmp_str.strip())
+				# print("Chapter:", tmp_str.strip())
+				tmp_str = ""
+			elif processing_section:
+				processing_chapter = False
+				processing_section = False
+				processing_article = False
+				sections.append(tmp_str.strip())
 				# print("Chapter:", tmp_str.strip())
 				tmp_str = ""
 			# elif processing_article:
@@ -77,8 +105,8 @@ def main():
 			# 	articles.append(tmp_str.strip())
 			# 	tmp_str = ""
 			
-	print("Dataframe Size:", df.shape)
-	print(df.head(30))
+	# print("Dataframe Size:", df.shape)
+	# print(df.head(30))
 
 	# Write to file
 	df.to_csv(target_filepath, index=False)
