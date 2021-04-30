@@ -207,14 +207,111 @@ def extract_gdpr_indian(filepath: str, start_line=185):
 	return df
 
 
+def extract_gdpr_espn(filepath: str, start_line=None):
+	"""	Extract natural language on LGPD Spanish version
+		to smaller components including "chapter", "section", "article" and "recital"
+	"""
+
+	# read docx to lines
+	lines = read_docx(filepath)
+
+	# for idx, line in enumerate(lines[:20]):
+	# 	print(f"Line {idx}: {line}")
+
+	chapters = ["undefined"]
+	articles = ["undefined"]
+	sections = ["undefined"]
+
+	df = pd.DataFrame(columns=["chapter", "section", "article", "recital"])
+
+	processing_chapter = False
+	processing_section = False
+	processing_article = False
+	# processing_recital = False
+
+	tmp_str = ""
+	for idx in range(len(lines)):
+		line = lines[idx].strip()
+
+		if line.startswith("CHAPTER "):
+			# chapters.append(line.strip())
+			processing_chapter = True
+			processing_section = False
+			processing_article = False
+			tmp_str = line
+			
+			# start new articles and sections
+			articles = ["undefined"]
+			sections = ["undefined"]
+
+		elif line.startswith("Section "):
+			if processing_chapter:
+				chapters.append(tmp_str.strip())
+				tmp_str = ""
+
+			processing_chapter = False
+			processing_section = True
+			processing_article = False
+			tmp_str = line
+		
+		elif line.startswith("Art. "):
+			if processing_section:
+				sections.append(tmp_str.strip())
+				tmp_str = ""
+
+			processing_chapter = False
+			processing_section = False
+			processing_article = True
+			articles.append(line.strip())
+
+		elif len(line):
+			if processing_chapter:
+				tmp_str = tmp_str.strip() + " " + line.strip()
+			elif processing_section:
+				tmp_str = tmp_str.strip() + " " + line.strip()
+				# sections.append(line.strip())
+			# elif processing_article:
+			# 	processing_chapter = False
+			# 	processing_section = False
+			# 	processing_article = False
+			# 	articles.append(line.strip())
+			else:
+				row = [chapters[-1], sections[-1], articles[-1], line.strip()]
+				df.loc[len(df.index)] = row
+		else: # len(line) <= 0
+			if processing_chapter:
+				processing_chapter = False
+				processing_section = False
+				processing_article = False
+				chapters.append(tmp_str.strip())
+				# print("Chapter:", tmp_str.strip())
+				tmp_str = ""
+			elif processing_section:
+				processing_chapter = False
+				processing_section = False
+				processing_article = False
+				sections.append(tmp_str.strip())
+				# print("Chapter:", tmp_str.strip())
+				tmp_str = ""
+			# elif processing_article:
+			# 	processing_article = False
+			# 	articles.append(tmp_str.strip())
+			# 	tmp_str = ""
+
+	return df
+
+
 def main():
 	# filepath = "GDPR-EN-Europe-converted.docx"
-	filepath = "GDPR-EN-Indian-converted.docx"
+	# filepath = "GDPR-EN-Indian-converted.docx"
+	filepath = "LGPD-ES-Brazil-converted.docx"
 	# target_filepath = "GDPR-EN-Europe-converted.csv"
-	target_filepath = "GDPR-EN-Indian-converted.csv"
+	# target_filepath = "GDPR-EN-Indian-converted.csv"
+	target_filepath = "LGPD-ES-Brazil-converted.csv"
 
 	# df = extract_gdpr_eu(filepath)
-	df = extract_gdpr_indian(filepath)
+	# df = extract_gdpr_indian(filepath)
+	df = extract_gdpr_espn(filepath)
 			
 	# print("Dataframe Size:", df.shape)
 	# print(df.head(30))
