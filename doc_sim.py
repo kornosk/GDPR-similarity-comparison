@@ -17,6 +17,8 @@ from sklearn.cluster import KMeans
 from sklearn.cluster import Birch
 from sklearn.mixture import GaussianMixture
 import collections
+from numpy import dot
+from numpy.linalg import norm
 
 class EmbeddingMethod:
     glove = "glove"
@@ -73,7 +75,7 @@ def filter_tokens(sentence):
     return tmp
 
 def get_word_embedding(word, emb_size, model):
-    return model[word] if word in model else list(np.random.uniform(0,0, emb_size))
+    return model[word] if word in model else list(np.random.uniform(-0.25, 0.25, emb_size))
 
 def get_bert_embeddings(sentences, model):
     sentence_embeddings = model.encode(sentences).tolist()
@@ -81,11 +83,13 @@ def get_bert_embeddings(sentences, model):
 
 def tokens_to_embeddings(tokens, model):
     if embedding_method == EmbeddingMethod.glove:
-        return np.mean([get_word_embedding(token, 50, model) for token in tokens], 0)
+        #return np.mean([get_word_embedding(token, 50, model) for token in tokens], 0)
+        return np.sum([get_word_embedding(token, 50, model) for token in tokens], 0)
+
     if embedding_method == EmbeddingMethod.fasttext:
         return np.mean([get_word_embedding(token, 300, model) for token in tokens], 0)
 
-def get_embeddings(model, filename):
+def get_embeddings(glove_model, siamese_model, bert_model, filename):
     df = pd.read_csv(filename).drop_duplicates()
     chapter_dic, section_dic, article_dic = collections.defaultdict(list), collections.defaultdict(list), collections.defaultdict(list)
     recitals = []
@@ -101,15 +105,65 @@ def get_embeddings(model, filename):
             continue
         if recital == "undefined" :
             continue
-        recitals.append(recital)
         if article  != "undefined" :
             article_dic[article].append(count)
-        texts.append(recital)
-        #glove_embeddings.append(tokens_to_embeddings(filter_tokens(recital), model))
+        tokens = filter_tokens(recital)
+        if len(tokens) <= 1:
+            continue
+        recitals.append(recital)
+        glove_embeddings.append(tokens_to_embeddings(tokens, glove_model))
         count += 1
-    bert_embeddings = get_bert_embeddings(recitals, model)
+    bert_embeddings = get_bert_embeddings(recitals, bert_model)
+    siamese_embeddings = get_bert_embeddings(recitals, siamese_model)
     #embeddings.append(np.mean(sentence_embeddings, 0))
-    return article_dic, texts, glove_embeddings, bert_embeddings
+    return article_dic, recitals, glove_embeddings, bert_embeddings, siamese_embeddings
+
+def cos_sim(a,b):
+    if norm(a) == 0:
+        print ("a is ")
+        print (a)
+    if norm(b) == 0:
+        print ("b is ")
+        print (b)
+    return dot(a, b)/(norm(a)*norm(b))
+
+def sentence_process(filename, gdpr_embeddings, bdpr_embeddings):
+    w = open(filename, 'w')
+    w.write("\t".join(["gdpr recital", "bdpr recital", "similarity"])+"\n")
+    for i in range(len(gdpr_embeddings)):
+        temp = []
+        for j in range(len(bdpr_embeddings)):
+            #sim = 1 - spatial.distance.cosine(gdpr_embeddings[i], bdpr_embeddings[j])
+            sim = cos_sim(gdpr_embeddings[i], bdpr_embeddings[j])
+            temp.append((sim, i, j))
+        temp.sort(reverse=True)
+        temp = temp[:30]
+        for val in temp:
+            w.write("\t".join([gdpr_text[val[1]], bdpr_text[val[2]], str(val[0])])+"\n")
+    w.close()
+
+def article_process(filename, gdpr_article_dic, bdpr_article_dic, gdpr_embeddings, bdpr_embeddings):
+    w = open(filename, 'w')
+    w.write("\t".join(["gdpr article", "bdpr article", "similarity"])+"\n")
+    for key2 in gdpr_article_dic:
+        temp = []
+        for key1 in bdpr_article_dic:
+            b_idx = bdpr_article_dic[key1]
+            b_texts = ".".join([key1]+[bdpr_text[idx] for idx in b_idx])
+            b_sum = np.sum([bdpr_embeddings[idx] for idx in b_idx], 0)
+
+            g_idx = gdpr_article_dic[key2]
+            g_texts = ".".join([key2]+[gdpr_text[idx] for idx in g_idx])
+            g_sum = np.sum([gdpr_embeddings[idx] for idx in g_idx], 0)
+
+            sim = 1 - spatial.distance.cosine(b_sum, g_sum)
+            temp.append((sim, g_texts, b_texts))
+        temp.sort(reverse=True)
+        temp = temp[:30]
+        for val in temp:
+            w.write("\t".join([val[1], val[2], str(val[0])])+"\n")
+    w.close()
+
 
 chapter_gdpr, section_gdpr, article_gdpr = collections.defaultdict(list), collections.defaultdict(list), collections.defaultdict(list)
 
@@ -118,7 +172,7 @@ tknzr = TweetTokenizer()
 lemmatizer = WordNetLemmatizer()
 
 
-embedding_method = EmbeddingMethod.bert
+embedding_method = EmbeddingMethod.glove
 if embedding_method == EmbeddingMethod.glove:
     model = load_glove_vectors()
 elif embedding_method == EmbeddingMethod.fasttext:
@@ -128,41 +182,19 @@ else:
     model =  SentenceTransformer("bert-base-nli-mean-tokens")
     model.max_seq_length = 512
 
-#idpr_article_dic, idpr_text, idpr_glove_embeddings, idpr_bert_embeddings = get_embeddings(model, "data/GDPR-EN-Indian-converted.csv")
-bdpr_article_dic, bdpr_text, bdpr_glove_embeddings, bdpr_bert_embeddings = get_embeddings(model, "data/LGPD-ES-Brazil-converted.csv")
-gdpr_article_dic, gdpr_text, gdpr_glove_embeddings, gdpr_bert_embeddings = get_embeddings(model, "data/GDPR-EN-Europe-converted.csv")
-w = open("simi_sentence.csv", 'w')
-w.write("\t".join(["gdpr recital", "bdpr recital", "similarity"])+"\n")
-for i in range(len(gdpr_bert_embeddings)):
-    temp = []
-    for j in range(len(bdpr_bert_embeddings)):
-        sim = 1 - spatial.distance.cosine(gdpr_bert_embeddings[i], bdpr_bert_embeddings[j])
-        temp.append((sim, i, j))
-    temp.sort(reverse=True)
-    temp = temp[:30]
-    for val in temp:
-        w.write("\t".join([gdpr_text[val[1]], bdpr_text[val[2]], str(val[0])])+"\n")
-w.close()
+glove_model = load_glove_vectors()
+siamese_model =  SentenceTransformer("bert-base-nli-mean-tokens")
+siamese_model.max_seq_length = 512
+bert_model = load_bert_model("/home/yaguang/pretrained_models/uncased_L-12_H-768_A-12")
+bert_model.max_seq_length = 512
 
 
-print (len(gdpr_article_dic), len(bdpr_article_dic))
-w = open("simi_article.csv", 'w')
-w.write("\t".join(["gdpr article", "bdpr article", "similarity"])+"\n")
-for key2 in gdpr_article_dic:
-    temp = []
-    for key1 in bdpr_article_dic:
-        b_idx = bdpr_article_dic[key1]
-        b_texts = ".".join([key1]+[bdpr_text[idx] for idx in b_idx])
-        b_sum = np.sum([bdpr_bert_embeddings[idx] for idx in b_idx], 0)
+bdpr_article_dic, bdpr_text, bdpr_glove_embeddings, bdpr_bert_embeddings, bdpr_siamese_embeddings = get_embeddings(glove_model, siamese_model, bert_model, "data/LGPD-ES-Brazil-converted.csv")
+gdpr_article_dic, gdpr_text, gdpr_glove_embeddings, gdpr_bert_embeddings, gdpr_siamese_embeddings = get_embeddings(glove_model, siamese_model, bert_model, "data/GDPR-EN-Europe-converted.csv")
 
-        g_idx = gdpr_article_dic[key2]
-        g_texts = ".".join([key2]+[gdpr_text[idx] for idx in g_idx])
-        g_sum = np.sum([gdpr_bert_embeddings[idx] for idx in g_idx], 0)
-
-        sim = 1 - spatial.distance.cosine(b_sum, g_sum)
-        temp.append((sim, g_texts, b_texts))
-    temp.sort(reverse=True)
-    temp = temp[:30]
-    for val in temp:
-        w.write("\t".join([val[1], val[2], str(val[0])])+"\n")
-w.close()
+sentence_process("simi_sentence_bert.csv", gdpr_bert_embeddings, bdpr_bert_embeddings)
+article_process("simi_article_bert.csv", gdpr_article_dic, bdpr_article_dic, gdpr_bert_embeddings, bdpr_bert_embeddings)
+sentence_process("simi_sentence_siamese.csv", gdpr_siamese_embeddings, bdpr_siamese_embeddings)
+article_process("simi_article_siamese.csv", gdpr_article_dic, bdpr_article_dic, gdpr_siamese_embeddings, bdpr_siamese_embeddings)
+sentence_process("simi_sentence_glove.csv", gdpr_glove_embeddings, bdpr_glove_embeddings)
+article_process("simi_article_glove.csv", gdpr_article_dic, bdpr_article_dic, gdpr_glove_embeddings, bdpr_glove_embeddings)
