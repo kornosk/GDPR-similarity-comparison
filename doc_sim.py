@@ -124,7 +124,8 @@ if embedding_method == EmbeddingMethod.glove:
 elif embedding_method == EmbeddingMethod.fasttext:
     model = load_fasttext_vectors()
 else:
-    model = load_bert_model("/home/yaguang/pretrained_models/uncased_L-12_H-768_A-12")
+    #model = load_bert_model("/home/yaguang/pretrained_models/uncased_L-12_H-768_A-12")
+    model =  SentenceTransformer("bert-base-nli-mean-tokens")
     model.max_seq_length = 512
 
 #idpr_article_dic, idpr_text, idpr_glove_embeddings, idpr_bert_embeddings = get_embeddings(model, "data/GDPR-EN-Indian-converted.csv")
@@ -132,15 +133,23 @@ bdpr_article_dic, bdpr_text, bdpr_glove_embeddings, bdpr_bert_embeddings = get_e
 gdpr_article_dic, gdpr_text, gdpr_glove_embeddings, gdpr_bert_embeddings = get_embeddings(model, "data/GDPR-EN-Europe-converted.csv")
 w = open("simi_sentence.csv", 'w')
 w.write("\t".join(["gdpr recital", "bdpr recital", "similarity"])+"\n")
-for i in range(len(bdpr_bert_embeddings)):
-    for j in range(len(gdpr_bert_embeddings)):
-        sim = 1 - spatial.distance.cosine(bdpr_bert_embeddings[i], gdpr_bert_embeddings[j])
-        if sim > 0.8:
-            w.write("\t".join([bdpr_text[i], gdpr_text[j], str(sim)])+"\n")
+for i in range(len(gdpr_bert_embeddings)):
+    temp = []
+    for j in range(len(bdpr_bert_embeddings)):
+        sim = 1 - spatial.distance.cosine(gdpr_bert_embeddings[i], bdpr_bert_embeddings[j])
+        temp.append((sim, i, j))
+    temp.sort(reverse=True)
+    temp = temp[:30]
+    for val in temp:
+        w.write("\t".join([gdpr_text[val[1]], bdpr_text[val[2]], str(val[0])])+"\n")
 w.close()
+
+
+print (len(gdpr_article_dic), len(bdpr_article_dic))
 w = open("simi_article.csv", 'w')
 w.write("\t".join(["gdpr article", "bdpr article", "similarity"])+"\n")
 for key2 in gdpr_article_dic:
+    temp = []
     for key1 in bdpr_article_dic:
         b_idx = bdpr_article_dic[key1]
         b_texts = ".".join([key1]+[bdpr_text[idx] for idx in b_idx])
@@ -151,6 +160,9 @@ for key2 in gdpr_article_dic:
         g_sum = np.sum([gdpr_bert_embeddings[idx] for idx in g_idx], 0)
 
         sim = 1 - spatial.distance.cosine(b_sum, g_sum)
-        #if sim > 0.8:
-        w.write("\t".join([b_texts, g_texts, str(sim)])+"\n")
+        temp.append((sim, g_texts, b_texts))
+    temp.sort(reverse=True)
+    temp = temp[:30]
+    for val in temp:
+        w.write("\t".join([val[1], val[2], str(val[0])])+"\n")
 w.close()
