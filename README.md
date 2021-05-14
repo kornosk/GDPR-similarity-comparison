@@ -22,7 +22,8 @@ df = pd.read_csv(file_path) # columns: ["chapter", "section", "article", "recita
 ```
 
 ## Materials
-* [Presentation slide](https://docs.google.com/presentation/d/12DSfG_3TE1FYhimZhktm2EmdRjRjoBQ0K9QxeT-fhyQ/edit?usp=sharing)
+* [Course Page](https://courses.benujcich.georgetown.domains/cosc824/sp2021/)
+* [Presentation Slides](https://docs.google.com/presentation/d/12DSfG_3TE1FYhimZhktm2EmdRjRjoBQ0K9QxeT-fhyQ/edit?usp=sharing)
 * Preprint - Coming soon 🔥
 
 ## Project Member
