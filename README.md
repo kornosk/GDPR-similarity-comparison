@@ -23,12 +23,18 @@ df = pd.read_csv(file_path) # columns: ["chapter", "section", "article", "recita
 
 ## Materials
 * [Presentation slide](https://docs.google.com/presentation/d/12DSfG_3TE1FYhimZhktm2EmdRjRjoBQ0K9QxeT-fhyQ/edit?usp=sharing)
-* Paper - Coming soon 🔥
+* Preprint - Coming soon 🔥
 
-## Team Member
+## Project Member
 * Kornraphop Kawintiranon - [Github](https://github.com/kornosk)
 * Yaguang Liu - [Github](https://github.com/steveguang)
 * Prof. Benjamin E. Ujcich (Instructor) - [Personal](https://personal.benujcich.georgetown.domains/)
+
+## Citation
+If you feel our paper and resources are useful and encouraging, please consider citing our work! 🙏
+```bibtex
+Coming soon
+```
 
 ## References
 - PDF to Docx: [https://smallpdf.com/pdf-to-word](https://smallpdf.com/pdf-to-word)
