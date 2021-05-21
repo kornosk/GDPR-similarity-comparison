@@ -1,9 +1,11 @@
 # GDPR Similarity Comparison
-We extract information from GDPR-like documents from different countries written in natuaral language and construct well-strucured data.
+This repo is a part of the report - [Towards Automatic Comparison of Data Privacy Documents: A Preliminary Experiment on GDPR-like Laws]() coming soon 🔥
 
-The structured data are 4 columns including `chapter, section, article and recital`. This could benefit any future work that would like to explore GDPR-like using computational methods. 🚀
+- We extract information from GDPR-like documents from different countries written in natuaral language and construct well-strucured data.
 
-This project is inspired by [COSC-824 Data Protection by Design](https://courses.benujcich.georgetown.domains/cosc824/sp2021/), Department of Computer Science at Georgetown University.
+- The structured data are 4 columns including `chapter, section, article and recital`. This could benefit any future work that would like to explore GDPR-like using computational methods. 🚀
+
+- This project is inspired by [COSC-824 Data Protection by Design](https://courses.benujcich.georgetown.domains/cosc824/sp2021/), Department of Computer Science at Georgetown University.
 
 ## Data
 We convert from PDF to Docx to CSV with well-structured style. Now, our data include GDPR-like documents from:
