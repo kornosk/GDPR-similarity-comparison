@@ -1,5 +1,5 @@
 # GDPR Similarity Comparison
-This repo is a part of the report - [Towards Automatic Comparison of Data Privacy Documents: A Preliminary Experiment on GDPR-like Laws]() coming soon 🔥
+This repo is a part of the report - [Towards Automatic Comparison of Data Privacy Documents: A Preliminary Experiment on GDPR-like Laws](https://arxiv.org/abs/2105.10117) 🔥
 
 - We extract information from GDPR-like documents from different countries written in natuaral language and construct well-strucured data.
 
@@ -26,7 +26,7 @@ df = pd.read_csv(file_path) # columns: ["chapter", "section", "article", "recita
 ## Materials
 * [Course Page](https://courses.benujcich.georgetown.domains/cosc824/sp2021/)
 * [Presentation Slides](https://docs.google.com/presentation/d/12DSfG_3TE1FYhimZhktm2EmdRjRjoBQ0K9QxeT-fhyQ/edit?usp=sharing)
-* Preprint - Coming soon 🔥
+* [Preprint](https://arxiv.org/abs/2105.10117)
 
 ## Project Member
 * Kornraphop Kawintiranon - [Github](https://github.com/kornosk)
@@ -36,7 +36,13 @@ df = pd.read_csv(file_path) # columns: ["chapter", "section", "article", "recita
 ## Citation
 If you feel our paper and resources are useful and encouraging, please consider citing our work! 🙏
 ```bibtex
-Coming soon
+@article{kawintiranon2021automatic,
+    title={Towards Automatic Comparison of Data Privacy Documents: A Preliminary Experiment on GDPR-like Laws},
+    author={Kawintiranon, Kornraphop and Liu, Yaguang},
+    journal={arXiv preprint arXiv:2105.10117},
+    year={2021},
+    url={https://arxiv.org/abs/2105.10117}
+}
 ```
 
 ## References
